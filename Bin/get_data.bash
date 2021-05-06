@@ -1,6 +1,6 @@
 ###############################################################################
 # Author: Pablo Reyes Moctezuma <info@pabloreyes.com.mx>
-# Objective: Download Our World in Data Covid data
+# Description: Download 'Our World in Data' Covid dataset
 ###############################################################################
 
 # Define functions ============================================================
