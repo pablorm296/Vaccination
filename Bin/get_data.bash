@@ -3,6 +3,19 @@
 # Objective: Download Our World in Data Covid data
 ###############################################################################
 
+# Define functions ============================================================
+
+# Function to log a message to the stdout
+# Arg1: Level
+# Arg2: Msg
+log_msg() {
+    # Define locals
+    local LEVEL=${1:="INFO"}
+    local MSG=${2:=""}
+    # Echo msg
+    echo "$(date) | $LEVEL : $MSG"
+}
+
 # Download data
 # Flag -O (output file)
 wget https://covid.ourworldindata.org/data/owid-covid-data.csv -O Data/covid-data.csv
