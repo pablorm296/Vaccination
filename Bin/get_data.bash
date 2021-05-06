@@ -1,4 +1,7 @@
+###############################################################################
 # Author: Pablo Reyes Moctezuma <info@pabloreyes.com.mx>
+# Objective: Download Our World in Data Covid data
+###############################################################################
 
 # Download data
 # Flag -O (output file)
