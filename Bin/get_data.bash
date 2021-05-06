@@ -16,6 +16,8 @@ log_msg() {
     echo "$(date) | $LEVEL : $MSG"
 }
 
+# Main routine ================================================================
+
 # Download data
 # Flag -O (output file)
 
