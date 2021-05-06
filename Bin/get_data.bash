@@ -18,7 +18,17 @@ log_msg() {
 
 # Download data
 # Flag -O (output file)
+
+log_msg "INFO" "Getting COVID data..."
+
 wget https://covid.ourworldindata.org/data/owid-covid-data.csv -O Data/covid-data.csv
 
+log_msg "INFO" "Data downloaded!"
+
 # Compress data
+
+log_msg "INFO" "Compressing data..."
+
 zip -u Data/covid-data.csv
+
+log_msg "INFO" "Data compressed!"
