@@ -31,6 +31,6 @@ log_msg "INFO" "Data downloaded!"
 
 log_msg "INFO" "Compressing data..."
 
-tar -cfz Data/covid-data-compressed.tgz Data/covid-data.csv
+tar cfz Data/covid-data-compressed.tgz Data/covid-data.csv
 
 log_msg "INFO" "Data compressed!"
