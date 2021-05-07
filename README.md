@@ -17,6 +17,12 @@ There are four data sources used in this analysis:
 
 The last data source was used to match covid-19 indicators with the UN's population prospects.
 
+All datasets are in the `Data/` directory.
+
+### Compression
+
+Please note that the datasets in `Data/` are compressed using tar (all files with the '-compressed' suffix). Before replicating the analysis, please make sure that you decompress the tarballs and remove the '-compressed' suffix from the decompressed files.
+
 ## Output
 
-The `Out/` directory contains all the output from the R code execution. The output is organized in three main subdirectories: `Data/`, `Plots/`, and `Summaries/`. The first one contains the "clean" versions of the covid-19 data and the UN population prospects. The second one contains plots. The third one contains some summary tables in CSV format.
+The `Out/` directory contains all the output from the R code execution. The output is organized in three main subdirectories: `Data/`, `Plots/`, and `Summaries/`. The first one contains the "clean" versions of the covid-19 data and the UN population prospects. The second one contains plots. The third one contains summary tables in CSV format.
