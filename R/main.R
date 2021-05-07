@@ -198,8 +198,10 @@ DATA %>%
 
 # Compute new rates (using UN population)
 DATA %>%
-  mutate(people_fully_vaccinated_per_hundred = people_fully_vaccinated / Age_16_more * 100,
-         people_vaccinated_per_hundred = people_vaccinated / Age_16_more * 100) -> DATA
+  mutate(people_16_fully_vaccinated_per_hundred = people_fully_vaccinated / Age_16_more * 100,
+         people_16_vaccinated_per_hundred = people_vaccinated / Age_16_more * 100,
+         people_18_fully_vaccinated_per_hundred = people_fully_vaccinated / Age_18_more * 100,
+         people_18_vaccinated_per_hundred = people_vaccinated / Age_18_more * 100) -> DATA
 
 # Write merged data
 DATA %>%
@@ -239,16 +241,26 @@ DATA %>%
   filter(!is.na(people_fully_vaccinated), !is.na(total_vaccinations)) %>%
   summarise(days_of_vaccination = ( max(date) - min(date) ) %>% as.numeric(),
             people_fully_vaccinated = max(people_fully_vaccinated, na.rm = T),
-            people_fully_vaccinated_per_hundred = max(people_fully_vaccinated_per_hundred, na.rm = T),
+            people_16_fully_vaccinated_per_hundred = max(people_16_fully_vaccinated_per_hundred, na.rm = T),
+            people_18_fully_vaccinated_per_hundred = max(people_18_fully_vaccinated_per_hundred, na.rm = T),
             naive_rate_vaccination = people_fully_vaccinated / days_of_vaccination,
             people_vaccinated = max(people_vaccinated, na.rm = T),
             people_vaccinated_per_hundred = max(people_vaccinated_per_hundred, na.rm = T),
             population = max(population),
+            population_16 = max(Age_16_more),
+            population_18 = max(Age_18_more),
             group = max(group_name)) -> Vaccination_summary
 
 # If days of vaccination is 0, then rate is number of vaccinated
 Vaccination_summary %>%
   mutate(naive_rate_vaccination = if_else(days_of_vaccination < 1, people_fully_vaccinated, naive_rate_vaccination)) -> Vaccination_summary
+
+# If population is NA, then set per hundred to NA
+Vaccination_summary %>%
+  mutate(people_16_fully_vaccinated_per_hundred = if_else(is.na(population_16),
+                                                          NA_real_, people_16_fully_vaccinated_per_hundred),
+         people_18_fully_vaccinated_per_hundred = if_else(is.na(population_18),
+                                                          NA_real_, people_18_fully_vaccinated_per_hundred)) -> Vaccination_summary
 
 # Write
 Vaccination_summary %>%
@@ -259,11 +271,20 @@ Vaccination_summary %>%
 # Get fully vaccinated summary by group
 Vaccination_summary %>%
   group_by(group) %>%
-  skim(people_fully_vaccinated_per_hundred) -> Vaccination_summary_descriptors
+  skim(people_16_fully_vaccinated_per_hundred) -> Vaccination_summary_descriptors
 
 # Write
 Vaccination_summary_descriptors %>%
-  write_csv(file = "Out/Summaries/fully_vaccinated_summary_by_income.csv")
+  write_csv(file = "Out/Summaries/fully_16_vaccinated_summary_by_income.csv")
+
+# Get fully vaccinated summary by group
+Vaccination_summary %>%
+  group_by(group) %>%
+  skim(people_18_fully_vaccinated_per_hundred) -> Vaccination_summary_descriptors
+
+# Write
+Vaccination_summary_descriptors %>%
+  write_csv(file = "Out/Summaries/fully_18_vaccinated_summary_by_income.csv")
 
 ### Vaccination summary plots ---------
 
@@ -284,7 +305,7 @@ Vaccination_summary %>%
 #### Violin: share of fully vaccinated ####
 
 Vaccination_summary %>%
-  ggplot(aes(x = group, y = people_fully_vaccinated_per_hundred,
+  ggplot(aes(x = group, y = people_16_fully_vaccinated_per_hundred,
              colour = group, fill = group)) +
   geom_violin(alpha = 0.5, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_jitter(width = 0.1, alpha = 0.5) +
@@ -351,10 +372,10 @@ Vaccination_summary %>%
 
 Vaccination_summary %>%
   ungroup() %>%
-  arrange(-people_fully_vaccinated_per_hundred) %>%
+  arrange(-people_16_fully_vaccinated_per_hundred) %>%
   slice_head(n = 25) %>%
-  ggplot(aes(x = reorder(location, people_fully_vaccinated_per_hundred),
-             y = people_fully_vaccinated_per_hundred,
+  ggplot(aes(x = reorder(location, people_16_fully_vaccinated_per_hundred),
+             y = people_16_fully_vaccinated_per_hundred,
              colour = group, fill = group)) + 
   geom_bar(stat = "identity", width = 0.75,
            alpha = 0.75) +
@@ -423,15 +444,17 @@ Vaccination_summary %>%
 ### Naive prediction ------------------
 
 Vaccination_summary %>%
-  mutate(remaining = population - people_fully_vaccinated,
-         naive_remaining_days = remaining / naive_rate_vaccination) -> Vaccination_summary
+  mutate(remaining_16 = population_16 - people_fully_vaccinated,
+         naive_remaining_days_16 = remaining_16 / naive_rate_vaccination,
+         remaining_18 = population_18 - people_fully_vaccinated,
+         naive_remaining_days_18 = remaining_18 / naive_rate_vaccination) -> Vaccination_summary
 
 ### Naive prediction plots ------------------
 
 Vaccination_summary %>%
   filter( !(location %in% c("Ukraine", "Guatemala", "Albania")) ) %>%
   ggplot(aes(x = group,
-             y = naive_remaining_days,
+             y = naive_remaining_days_16,
              colour = group, fill = group)) + 
   geom_violin(alpha = 0.5, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_jitter(width = 0.1, alpha = 0.5) +
@@ -455,9 +478,33 @@ Vaccination_summary %>%
 
 # Function that computes how many days until ALL population is vaccinated
 # This function uses Holt’s linear trend method (https://otexts.com/fpp2/holt.html)
-compute_days_until_100 <- function(x, country, max_days = 365 * 100) {
+compute_days_until_100_16 <- function(x, country, max_days = 365 * 100) {
   # Create time series
-  TS <- ts(x$people_fully_vaccinated_per_hundred[x$location == country],
+  TS <- ts(x$people_16_fully_vaccinated_per_hundred[x$location == country],
+           start = c(2021, 1), frequency = 365)
+  
+  # Compute HOLT's forecast
+  # If there's an error, assume it's because if too much NA.
+  # Set value to Inf
+  forecast <- tryCatch(holt(TS, h = max_days),
+                       error = function(e) return(Inf))
+  
+  # If it's not a list, then it's Inf
+  if (!is.list(forecast)) {
+    return(Inf)
+  }
+  
+  # Get first day when 100.0 is reached
+  min_100 <- which(forecast$mean >= 100) %>% min()
+  
+  return(min_100)
+}
+
+# Function that computes how many days until ALL population is vaccinated
+# This function uses Holt’s linear trend method (https://otexts.com/fpp2/holt.html)
+compute_days_until_100_18 <- function(x, country, max_days = 365 * 100) {
+  # Create time series
+  TS <- ts(x$people_18_fully_vaccinated_per_hundred[x$location == country],
            start = c(2021, 1), frequency = 365)
   
   # Compute HOLT's forecast
@@ -481,11 +528,13 @@ compute_days_until_100 <- function(x, country, max_days = 365 * 100) {
 countries <- unique(DATA$location)
 
 # Compute days until vaccination
-holts_remaining_days <- sapply(countries, compute_days_until_100, x = DATA)
+holts_remaining_days_16 <- sapply(countries, compute_days_until_100_16, x = DATA)
+holts_remaining_days_18 <- sapply(countries, compute_days_until_100_18, x = DATA)
 
 # Creat tibble
 holts_forecast <- tibble(location = countries,
-                         holts_remaining_days = holts_remaining_days)
+                         holts_remaining_days_16 = holts_remaining_days_16,
+                         holts_remaining_days_18 = holts_remaining_days_18)
 
 # Merge
 Vaccination_summary %>%
@@ -495,23 +544,12 @@ Vaccination_summary %>%
 Vaccination_summary %>%
   write_csv("Out/Summaries/vaccination_summary.csv")
 
-#### Descriptive statistics ####
-
-# Get fully vaccinated summary by group
-Vaccination_summary %>%
-  group_by(group) %>%
-  skim(people_fully_vaccinated_per_hundred) -> Vaccination_summary_descriptors
-
-# Write
-Vaccination_summary_descriptors %>%
-  write_csv(file = "Out/Summaries/fully_vaccinated_summary_by_income.csv")
-
 #### Plot ####
 
 Vaccination_summary %>%
-  filter( !is.infinite(holts_remaining_days) ) %>%
+  filter( !is.infinite(holts_remaining_days_16) ) %>%
   ggplot(aes(x = group,
-             y = holts_remaining_days,
+             y = holts_remaining_days_16,
              colour = group, fill = group)) + 
   geom_violin(alpha = 0.5, draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_jitter(width = 0.1, alpha = 0.5) +
