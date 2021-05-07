@@ -1,5 +1,6 @@
 # Ignore data files
 *.csv
+*.xls
 
 # Ignore r files
 .Rproj.user
