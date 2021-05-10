@@ -305,6 +305,93 @@ Vaccination_summary %>%
 Vaccination_summary_descriptors %>%
   write_csv(file = "Out/Summaries/fully_18_vaccinated_summary_by_income.csv")
 
+### Share of population that lives in a country where vaccination started ----
+
+# Load (again hehe) covid data
+COVID_DATA <- read_rds("Out/Data/covid.rds")
+
+# Get countries without vaccination data
+COVID_DATA %>%
+  group_by(iso_code, location) %>%
+  filter(all(is.na(people_vaccinated_per_hundred))) %>%
+  pull(location) %>% 
+  unique() -> countries_no_vaccination
+
+# Get countries without (fully) vaccinated data
+COVID_DATA %>%
+  group_by(iso_code, location) %>%
+  filter(all(is.na(people_fully_vaccinated_per_hundred))) %>%
+  pull(location) %>% 
+  unique() -> countries_no_vaccination_fully
+
+# Get summary
+COVID_DATA %>%
+  mutate(vaccination_started = if_else(location %in% countries_no_vaccination,
+                                       FALSE,
+                                       TRUE),
+         fully_vaccinated_available = if_else(location %in% countries_no_vaccination_fully,
+                                              FALSE,
+                                              TRUE)) %>%
+  select(iso_code, continent, location, date, population,
+         vaccination_started, fully_vaccinated_available) -> Countries_vaccination
+
+# Load World Bank Classification
+WORLD_BANK_CLASS <- read_rds("Out/Data/world_bank.rds")
+
+# Merge with classification
+Countries_vaccination %>%
+  left_join(WORLD_BANK_CLASS %>% select(-country), by = "iso_code") -> Countries_vaccination
+
+# Summary
+Countries_vaccination %>%
+  group_by(location) %>%
+  summarise(population = max(population),
+            vaccination_started = max(vaccination_started) %>% as.logical(),
+            group_name = max(group_name)) %>%
+  filter(!is.na(group_name)) %>%
+  group_by(group_name, vaccination_started) %>%
+  summarise(population = sum(population)) %>%
+  mutate(total_population = sum(population),
+         prop_population = population/total_population) -> Countries_vaccination_started
+
+Countries_vaccination %>%
+  group_by(location) %>%
+  summarise(population = max(population),
+            fully_vaccinated_available = max(fully_vaccinated_available) %>% as.logical(),
+            group_name = max(group_name)) %>%
+  filter(!is.na(group_name)) %>%
+  group_by(group_name, fully_vaccinated_available) %>%
+  summarise(population = sum(population)) %>%
+  mutate(total_population = sum(population),
+         prop_population = population/total_population) -> Countries_vaccination_available
+
+# Write data
+Countries_vaccination_started %>%
+  write_csv("Out/Summaries/groups_vaccination_started.csv")
+Countries_vaccination_available %>%
+  write_csv("Out/Summaries/groups_vaccination_data_available.csv")
+
+#### Plots ####
+
+Countries_vaccination_started %>%
+  filter(vaccination_started) %>%
+  ggplot(aes(x = reorder(group_name, -prop_population), y = prop_population)) +
+  geom_bar(stat = "identity",
+           colour = "#00bfc4",
+           fill = "#00bfc4",
+           alpha = 0.75,
+           width = 0.75) +
+  scale_y_continuous(labels = scales::percent) +
+  coord_flip() +
+  labs(x = "Income group",
+       y = "Share of population (%)",
+       title = "Share of Population that Lives in a Country Where Vaccination Against Covid-19 Started",
+       subtitle = "Countries by income group",
+       caption = str_c(caption_data, "<br/>",
+                       caption_population, "<br/>",
+                       caption_world_bank)) +
+  theme_DataInt() -> Plots$Vaccination_summary$share_population_started
+
 ### Vaccination summary plots ---------
 
 # Init container
