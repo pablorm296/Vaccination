@@ -301,7 +301,7 @@ Vaccination_summary %>%
   group_by(group) %>%
   skim(people_16_fully_vaccinated_per_hundred) -> Vaccination_summary_descriptors
 
-# Write
+# Write summary
 Vaccination_summary_descriptors %>%
   write_csv(file = "Out/Summaries/fully_16_vaccinated_summary_by_income.csv")
 
