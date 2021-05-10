@@ -64,6 +64,10 @@ UN_CODES <- read.csv("Data/UNSD_codes.csv")
 COVID_DATA %>%
   mutate(date = as.Date(date, format = "%Y-%m-%d")) -> COVID_DATA
 
+# Write data
+COVID_DATA %>%
+  write_rds("Out/Data/covid.rds")
+
 ## World Bank Data --------------------
 
 # Rename vars
@@ -79,6 +83,9 @@ WORLD_BANK_CLASS %>%
                            "Lower middle income", 
                            "Upper middle income", 
                            "High income")) -> WORLD_BANK_CLASS
+
+WORLD_BANK_CLASS %>%
+  write_rds("Out/Data/world_bank.rds")
 
 ## Population Data --------------------
 
