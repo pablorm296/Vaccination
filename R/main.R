@@ -582,12 +582,18 @@ Vaccination_summary %>%
 
 ## HOLT's forecast --------------------
 
+plan(multisession, workers = 7)
+
 # Get countries
 countries <- unique(DATA$location)
 
 # Compute days until vaccination
-holts_remaining_days_16 <- sapply(countries, compute_days_until_100_16, x = DATA)
-holts_remaining_days_18 <- sapply(countries, compute_days_until_100_18, x = DATA)
+holts_remaining_days_16 <- future_map_dbl(countries, function(country, .progress = T) {
+  compute_days_until_100(x = DATA, country = country, population = "16+")
+})
+holts_remaining_days_18 <- future_map_dbl(countries, function(country, .progress = T) {
+  compute_days_until_100(x = DATA, country = country, population = "18+")
+})
 
 # Creat tibble
 holts_forecast <- tibble(location = countries,
