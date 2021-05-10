@@ -7,6 +7,8 @@ library(readxl)
 library(ggtext)
 library(extrafont)
 library(forecast)
+library(progressr)
+library(furrr)
 
 ## Initialize containers ####
 Plots <- list()
