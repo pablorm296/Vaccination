@@ -1,6 +1,6 @@
 # Set up =======================================================================
 
-# Load packages
+## Load packages ####
 library(tidyverse)
 library(skimr)
 library(readxl)
@@ -8,10 +8,11 @@ library(ggtext)
 library(extrafont)
 library(forecast)
 
-# Init plot container
+## Initialize containers ####
 Plots <- list()
 
-# Source functions and themes
+## Source files ####
+source("R/AuxObjects.R")
 source("R/functions.R")
 source("R/themes.R")
 
