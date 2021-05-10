@@ -473,54 +473,6 @@ Vaccination_summary %>%
 
 ## HOLT's forecast --------------------
 
-# Function that computes how many days until ALL population is vaccinated
-# This function uses Holt’s linear trend method (https://otexts.com/fpp2/holt.html)
-compute_days_until_100_16 <- function(x, country, max_days = 365 * 100) {
-  # Create time series
-  TS <- ts(x$people_16_fully_vaccinated_per_hundred[x$location == country],
-           start = c(2021, 1), frequency = 365)
-  
-  # Compute HOLT's forecast
-  # If there's an error, assume it's because if too much NA.
-  # Set value to Inf
-  forecast <- tryCatch(holt(TS, h = max_days),
-                       error = function(e) return(Inf))
-  
-  # If it's not a list, then it's Inf
-  if (!is.list(forecast)) {
-    return(Inf)
-  }
-  
-  # Get first day when 100.0 is reached
-  min_100 <- which(forecast$mean >= 100) %>% min()
-  
-  return(min_100)
-}
-
-# Function that computes how many days until ALL population is vaccinated
-# This function uses Holt’s linear trend method (https://otexts.com/fpp2/holt.html)
-compute_days_until_100_18 <- function(x, country, max_days = 365 * 100) {
-  # Create time series
-  TS <- ts(x$people_18_fully_vaccinated_per_hundred[x$location == country],
-           start = c(2021, 1), frequency = 365)
-  
-  # Compute HOLT's forecast
-  # If there's an error, assume it's because if too much NA.
-  # Set value to Inf
-  forecast <- tryCatch(holt(TS, h = max_days),
-                       error = function(e) return(Inf))
-  
-  # If it's not a list, then it's Inf
-  if (!is.list(forecast)) {
-    return(Inf)
-  }
-  
-  # Get first day when 100.0 is reached
-  min_100 <- which(forecast$mean >= 100) %>% min()
-  
-  return(min_100)
-}
-
 # Get countries
 countries <- unique(DATA$location)
 
