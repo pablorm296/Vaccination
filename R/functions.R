@@ -54,3 +54,20 @@ compute_days_until_100 <- function(x, country,
   
   return(min_100)
 }
+
+save_plots <- function(plot_container) {
+  # Get names
+  plot_names <- names(plot_container)
+  
+  # Write plots
+  lapply(plot_names, function(plot_container, plot_name) {
+    # Get plot
+    p <- plot_container[[plot_name]]
+    
+    # Save plot
+    ggsave(str_c("Out/Plots/", plot_name, ".png"), p,
+           width = 14, height = 10, units = "cm",
+           scale = 2, dpi = 400)
+  }, plot_container = plot_container)
+  
+}
