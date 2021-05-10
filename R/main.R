@@ -23,6 +23,7 @@ source("R/themes.R")
 # It contains basic COVID-19 statistics by country, like vaccination data, COVID cases,
 # COVID deaths, ICU patients, etc.
 # Source: https://ourworldindata.org/covid-vaccinations
+# Please note that in Bin/ there's a bash script to download the data (it's updated daily)
 
 COVID_DATA <- read.csv("Data/covid-data.csv")
 
