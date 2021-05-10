@@ -237,27 +237,49 @@ DATA %>%
   group_by(iso_code, location) %>%
   filter(!is.na(people_fully_vaccinated), !is.na(total_vaccinations)) %>%
   summarise(days_of_vaccination = ( max(date) - min(date) ) %>% as.numeric(),
+            # Number of people fully vaccinated
             people_fully_vaccinated = max(people_fully_vaccinated, na.rm = T),
+            # Number of people fully vaccinated per 100
+            people_vaccinated_per_hundred = max(people_fully_vaccinated_per_hundred, na.rm = T),
+            # Number of people fully vaccinated per 100 (base: aged 16+)
             people_16_fully_vaccinated_per_hundred = max(people_16_fully_vaccinated_per_hundred, na.rm = T),
+            # Number of people fully vaccinated per 100 (base: aged 18+)
             people_18_fully_vaccinated_per_hundred = max(people_18_fully_vaccinated_per_hundred, na.rm = T),
+            # Naive rate of vaccination (vaccinated / days)
             naive_rate_vaccination = people_fully_vaccinated / days_of_vaccination,
+            # Number of people vaccinated
             people_vaccinated = max(people_vaccinated, na.rm = T),
+            # Number of people vaccinated per 100
             people_vaccinated_per_hundred = max(people_vaccinated_per_hundred, na.rm = T),
+            # Population (Our World in Data)
             population = max(population),
+            # Population (16+, UN estimates)
             population_16 = max(Age_16_more),
+            # Population (18+, UN estimates)
             population_18 = max(Age_18_more),
+            # Income group
             group = max(group_name)) -> Vaccination_summary
 
 # If days of vaccination is 0, then rate is number of vaccinated
 Vaccination_summary %>%
   mutate(naive_rate_vaccination = if_else(days_of_vaccination < 1, people_fully_vaccinated, naive_rate_vaccination)) -> Vaccination_summary
 
-# If population is NA, then set per hundred to NA
+# Get countries to remove because of missing population estimates
 Vaccination_summary %>%
-  mutate(people_16_fully_vaccinated_per_hundred = if_else(is.na(population_16),
-                                                          NA_real_, people_16_fully_vaccinated_per_hundred),
-         people_18_fully_vaccinated_per_hundred = if_else(is.na(population_18),
-                                                          NA_real_, people_18_fully_vaccinated_per_hundred)) -> Vaccination_summary
+  filter(is.infinite(people_16_fully_vaccinated_per_hundred) |
+         is.infinite(people_18_fully_vaccinated_per_hundred)) %>%
+  pull(location) %>%
+  c(countries2remove) %>%
+  unique() -> countries2remove
+
+# Remove countries
+Vaccination_summary %>%
+  filter( !(location %in% countries2remove) ) -> Vaccination_summary
+
+# Write merged data and remove countries
+DATA %>%
+  filter( !(location %in% countries2remove) ) %>%
+  write_csv(file = "Out/Data/merged_data.csv")
 
 # Write
 Vaccination_summary %>%
