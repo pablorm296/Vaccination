@@ -351,6 +351,10 @@ WORLD_BANK_CLASS <- read_rds("Out/Data/world_bank.rds")
 Countries_vaccination %>%
   left_join(WORLD_BANK_CLASS %>% select(-country), by = "iso_code") -> Countries_vaccination
 
+Countries_vaccination %>%
+  group_by(group_name) %>%
+  summarise(Vac = mean(!vaccination_started))
+  
 # Summary
 Countries_vaccination %>%
   group_by(location) %>%
@@ -718,3 +722,4 @@ Vaccination_summary %>%
   mutate(diff = naive_remaining_days_all - holts_remaining_days_all) %>%
   pull(diff) %>%
   mean(na.rm = T)
+
