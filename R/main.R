@@ -562,7 +562,9 @@ Vaccination_summary %>%
   mutate(remaining_16 = population_16 - people_fully_vaccinated,
          naive_remaining_days_16 = remaining_16 / naive_rate_vaccination,
          remaining_18 = population_18 - people_fully_vaccinated,
-         naive_remaining_days_18 = remaining_18 / naive_rate_vaccination) -> Vaccination_summary
+         naive_remaining_days_18 = remaining_18 / naive_rate_vaccination,
+         remaining_all = population - people_fully_vaccinated,
+         naive_remaining_days_all = remaining_all / naive_rate_vaccination) -> Vaccination_summary
 
 ### Naive prediction plots ------------------
 
