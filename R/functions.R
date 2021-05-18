@@ -16,6 +16,8 @@ compute_days_until_100 <- function(x, country,
                                    population = "16+", 
                                    max_days = 365 * 100) {
   
+  cat(country, "\n")
+  
   # Validate population arg
   if ( !(population %in% c("16+", "18+", "all")) ) {
     stop("Population must be 16+, 18+ or all.")
@@ -32,22 +34,22 @@ compute_days_until_100 <- function(x, country,
   
   # Get data
   y <- x %>%
-    filter(country == country) %>%
+    filter(location == country) %>%
     pull( pop_var )
   
   # Create time series
-  TS <- ts(y, start = c(2021, 1), frequency = 365)
+  if (all(is.na(y))) {
+    return(NA)
+  } else if (sum(!is.na(y)) < 2) {
+    return(NA)
+  } else {
+    TS <- ts(y, start = c(2021, 1), frequency = 365)
+  }
   
   # Compute HOLT's forecast
   # If there's an error, assume it's because if too much NA.
   # Set value to Inf
-  forecast <- tryCatch(holt(TS, h = max_days),
-                       error = function(e) return(Inf))
-  
-  # If it's not a list, then it's Inf
-  if (!is.list(forecast)) {
-    return(Inf)
-  }
+  forecast <- holt(TS, h = max_days, biasadj = T)
   
   # Get first day when 100.0 is reached
   min_100 <- which(forecast$mean >= 100) %>% min()
