@@ -213,7 +213,7 @@ DATA %>%
 DATA %>%
   write_csv(file = "Out/Data/merged_data.csv")
 
-rm(COVID_DATA, WORLD_BANK_CLASS, POPULATION)
+rm(COVID_DATA, WORLD_BANK_CLASS)
 
 # Analysis =====================================================================
 
