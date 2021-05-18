@@ -663,6 +663,58 @@ Vaccination_summary %>%
                        caption_world_bank)) +
   theme_DataInt() -> Plots$Vaccination_summary$violin_holts_prediction
 
+Vaccination_summary %>%
+  filter(group == "Upper middle income") %>%
+  ggplot(aes(x = reorder(location, holts_remaining_days_16),
+             y = holts_remaining_days_16,
+             fill = holts_remaining_days_16,
+             colour = holts_remaining_days_16)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_c() +
+  scale_fill_viridis_c() +
+  coord_flip() +
+  labs(x = "Country",
+       y = "Days",
+       fill = "Days",
+       colour = "Days",
+       title = "Days Untill the Adult Population (16+) is Fully Vaccinated",
+       subtitle = "Holt's linear trend (Upper middle income countries)",
+       caption = str_c("Countries in gray = Inf (time estimation out of bounds).", "<br/>",
+                       "Naive forecast: population aged 16+ not vaccinated divided by current rate of vaccination.", "<br/>",
+                       caption_data, "<br/>",
+                       caption_population, "<br/>",
+                       caption_world_bank)) +
+  theme_DataInt() -> Plots$Vaccination_summary$bar_remaining_upper_middle
+
+Vaccination_summary %>%
+  filter(group == "Lower middle income") %>%
+  ggplot(aes(x = reorder(location, holts_remaining_days_16),
+             y = holts_remaining_days_16,
+             fill = holts_remaining_days_16,
+             colour = holts_remaining_days_16)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_c() +
+  scale_fill_viridis_c() +
+  coord_flip() +
+  labs(x = "Country",
+       y = "Days",
+       fill = "Days",
+       colour = "Days",
+       title = "Days Untill the Adult Population (16+) is Fully Vaccinated",
+       subtitle = "Holt's linear trend (Lower middle income countries)",
+       caption = str_c("Countries in gray = Inf (time estimation out of bounds).", "<br/>",
+                       "Naive forecast: population aged 16+ not vaccinated divided by current rate of vaccination.", "<br/>",
+                       caption_data, "<br/>",
+                       caption_population, "<br/>",
+                       caption_world_bank)) +
+  theme_DataInt() -> Plots$Vaccination_summary$bar_remaining_lower_middle
+
 # Write plots ==================================================================
 
 save_plots(Plots$Vaccination_summary)
+
+Vaccination_summary %>%
+  filter( !( is.na(naive_remaining_days_all) | is.infinite(holts_remaining_days_all) ) ) %>%
+  mutate(diff = naive_remaining_days_all - holts_remaining_days_all) %>%
+  pull(diff) %>%
+  mean(na.rm = T)
