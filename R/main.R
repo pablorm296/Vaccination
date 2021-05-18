@@ -599,17 +599,22 @@ plan(multisession, workers = 7)
 countries <- unique(DATA$location)
 
 # Compute days until vaccination
-holts_remaining_days_16 <- future_map_dbl(countries, function(country, .progress = T) {
+holts_remaining_days_16 <- map_dbl(countries, function(country, .progress = T) {
   compute_days_until_100(x = DATA, country = country, population = "16+")
 })
-holts_remaining_days_18 <- future_map_dbl(countries, function(country, .progress = T) {
+holts_remaining_days_18 <- map_dbl(countries, function(country, .progress = T) {
   compute_days_until_100(x = DATA, country = country, population = "18+")
+})
+holts_remaining_days_all <- map_dbl(countries, function(country, .progress = T) {
+  compute_days_until_100(x = DATA, country = country, population = "all")
 })
 
 # Creat tibble
 holts_forecast <- tibble(location = countries,
                          holts_remaining_days_16 = holts_remaining_days_16,
-                         holts_remaining_days_18 = holts_remaining_days_18)
+                         holts_remaining_days_18 = holts_remaining_days_18,
+                         holts_remaining_days_all = holts_remaining_days_all,
+                         diff_18_16 = holts_remaining_days_18 - holts_remaining_days_16)
 
 # Merge
 Vaccination_summary %>%
@@ -618,6 +623,19 @@ Vaccination_summary %>%
 # Write
 Vaccination_summary %>%
   write_csv("Out/Summaries/vaccination_summary.csv")
+
+Vaccination_summary %>%
+  filter(!is.infinite(holts_remaining_days_16),
+         !is.infinite(holts_remaining_days_18),
+         !is.infinite(holts_remaining_days_all)) %>%
+  group_by(group) %>%
+  skim(holts_remaining_days_all, 
+       holts_remaining_days_18, 
+       holts_remaining_days_16,
+       naive_remaining_days_16,
+       naive_remaining_days_18,
+       naive_remaining_days_all) %>%
+  write.csv("Out/Summaries/vaccination_forecast_summary.csv")
 
 #### Plot ####
 
