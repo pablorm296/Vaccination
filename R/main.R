@@ -7,8 +7,6 @@ library(readxl)
 library(ggtext)
 library(extrafont)
 library(forecast)
-library(progressr)
-library(furrr)
 
 ## Initialize containers ####
 Plots <- list()
@@ -136,7 +134,7 @@ POPULATION %>%
 
 # Write data
 POPULATION %>%
-  write_csv(file = "Out/Data/population_estimates.csv")
+  write_rds(file = "Out/Data/population_estimates.rds")
 
 rm(pop_names)
 
@@ -211,7 +209,7 @@ DATA %>%
 
 # Write merged data
 DATA %>%
-  write_csv(file = "Out/Data/merged_data.csv")
+  write_rds(file = "Out/Data/merged_data.rds")
 
 rm(COVID_DATA, WORLD_BANK_CLASS)
 
@@ -288,7 +286,7 @@ Vaccination_summary %>%
 # Write merged data and remove countries
 DATA %>%
   filter( !(location %in% countries2remove) ) %>%
-  write_csv(file = "Out/Data/merged_data.csv")
+  write_rds(file = "Out/Data/merged_data.rds")
 
 # Write
 Vaccination_summary %>%
@@ -596,8 +594,6 @@ Vaccination_summary %>%
   theme_DataInt() -> Plots$Vaccination_summary$violin_naive_prediction
 
 ## HOLT's forecast --------------------
-
-plan(multisession, workers = 7)
 
 # Get countries
 countries <- unique(DATA$location)
